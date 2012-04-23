@@ -35,7 +35,7 @@ setup(
     long_description=open('README.rst').read(),
     # long_description=load_rst(),
     license="ASL",
-    install_requires=['genshi'],
+    install_requires=['genshi', 'webob'],
     classifiers = [
         'Development Status :: 1 - Pre-Alpha',
         'Intended Audience :: Developers',

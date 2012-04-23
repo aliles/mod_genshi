@@ -48,11 +48,11 @@ and NOT ready for production use.
 A shortened list of features
 that are still to be completed.
 
-* Use `WebOb <http://www.webob.org/>`_ to manage request and response objects.
 * Load configuration from config file.
 * Extend Python path for templates from configuration.
-* Enables templates to change response code and headers.
 * Allow multiple application instances to co-exist.
+* Use `WebOb <http://www.webob.org/>`_ to support static file handling.
+* Improve the security controls around template loading.
 
 Not to mention all the documentation that is required.
 

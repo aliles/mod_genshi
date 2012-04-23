@@ -1,3 +1,4 @@
 genshi
+webob
 flake8
 sphinx
