@@ -16,7 +16,7 @@ test:
 	python setup.py test
 
 unittest:
-	python -m unittest
+	unit2 discover
 
 clean:
 	find . -type f -name "*.pyc" -exec rm '{}' +

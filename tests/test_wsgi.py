@@ -1,9 +1,9 @@
-import unittest
+import unittest2
 
 import mod_genshi.wsgi
 
 
-class TestTemplatePath(unittest.TestCase):
+class TestTemplatePath(unittest2.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -11,7 +11,8 @@ class TestTemplatePath(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.app
+        if hasattr(cls, 'app'):
+            del cls.app
 
     def setUp(self):
         self.get_path = self.app._get_template_path
@@ -39,7 +40,7 @@ class TestTemplatePath(unittest.TestCase):
         self.assertEqual(self.get_path('a/'), 'a/index.html')
 
 
-class TestHeaders(unittest.TestCase):
+class TestHeaders(unittest2.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -72,7 +73,7 @@ class TestHeaders(unittest.TestCase):
         self.assertEqual(self.response.status_code, 200)
 
 
-class TestBody(unittest.TestCase):
+class TestBody(unittest2.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -87,7 +88,7 @@ class TestBody(unittest.TestCase):
         self.resp = mod_genshi.wsgi.Response()
         self.body = self.app._body
 
-    @unittest.skip('Plain text templates not supported')
+    @unittest2.skip('Plain text templates not supported')
     def test_hello_world_txt(self):
         path = 'tests/templates/hello_world.txt'
         content = open(path, 'rt').read()
