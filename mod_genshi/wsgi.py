@@ -18,6 +18,21 @@ class WSGI(object):
         self.loader = TemplateLoader(os.path.abspath(os.curdir),
             auto_reload=True)
         self.index = 'index.html'
+        self.blocked_patterns = ('..',)
+        self.blocked_prefixes = ('.',)
+        self.blocked_suffixes = ('.swp', '.bak', '~')
+
+    def _is_path_blocked(self, path):
+        "Raise HTTPForbidden if path is blocked"
+        head, tail = os.path.split(path)
+        for pattern in self.blocked_patterns:
+            if pattern in path:
+                raise HTTPForbidden()
+        if tail.startswith(self.blocked_prefixes):
+            raise HTTPForbidden()
+        if tail.endswith(self.blocked_suffixes):
+            raise HTTPForbidden()
+        return path
 
     def _get_template_path(self, url):
         "Translate request path to template path"
@@ -28,6 +43,7 @@ class WSGI(object):
             path = path[1:]
         if path.endswith('/') or path == '':
             path += self.index
+        self._is_path_blocked(path)
         return path
 
     def _headers(self, template, response):

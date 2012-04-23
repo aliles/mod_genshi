@@ -40,6 +40,37 @@ class TestTemplatePath(unittest2.TestCase):
         self.assertEqual(self.get_path('a/'), 'a/index.html')
 
 
+class TestSecurity(unittest2.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = mod_genshi.wsgi.WSGI()
+
+    @classmethod
+    def tearDownClass(cls):
+        if hasattr(cls, 'app'):
+            del cls.app
+
+    def setUp(self):
+        self.is_blocked = self.app._is_path_blocked
+        self.exception = mod_genshi.wsgi.HTTPForbidden
+
+    def test_parent_path(self):
+        self.assertRaises(self.exception, self.is_blocked, '/../etc/password')
+
+    def test_hidden_file(self):
+        self.assertRaises(self.exception, self.is_blocked, '/.password.txt')
+
+    def test_vim_swap_file(self):
+        self.assertRaises(self.exception, self.is_blocked, '/index.html.swp')
+
+    def test_vim_backup_file(self):
+        self.assertRaises(self.exception, self.is_blocked, '/index.html~')
+
+    def test_backup_file(self):
+        self.assertRaises(self.exception, self.is_blocked, '/index.html.bak')
+
+
 class TestHeaders(unittest2.TestCase):
 
     @classmethod
