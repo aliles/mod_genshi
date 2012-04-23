@@ -2,3 +2,4 @@ genshi
 webob
 flake8
 sphinx
+unittest2

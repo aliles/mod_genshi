@@ -51,5 +51,5 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    test_suite = "tests"
+    test_suite = "unittest2.collector"
 )
