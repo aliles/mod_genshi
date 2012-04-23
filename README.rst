@@ -76,8 +76,25 @@ To use this development server. ::
 This will run the *mod_genshi* development server
 on port 8000.
 The port can be changed
-by passing a different port number
-as the first command line argument.
+by passing using the *-p* command line flag.
+There are a number of flags
+all of which are described
+if called with *-h* or *--help*. ::
+
+	$ python -m mod_genshi.server --help
+	Usage: python -m mod_genshi.server [options]
+
+	Options:
+	  -h, --help            show this help message and exit
+	  -p PORT, --port=PORT  Port that server will listen on
+	  -b, --window          Open a current web browser window for the server
+	  -w, --newwindow       Open a new web browser window for the server
+	  -t, --newtab          Open a new web browser tab for the server
+	  -r, --autoraise       Auto raise the web browser
+
+The *-b* option can be used
+to open a browser window
+for your *mod_genshi* application.
 
 gunicorn
 ````````
@@ -86,7 +103,7 @@ To run *mod_genshi* using gunicorn. ::
 
 	$ gunicorn mod_genshi.app:handler
 
-See the gunicorn documentation
+See the gunicorn `documentation <http://gunicorn.org/configure.html>`_
 for details on configuration.
 
 .. |build_status| image:: https://secure.travis-ci.org/aliles/mod_genshi.png?branch=master
