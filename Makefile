@@ -4,7 +4,7 @@ deps:
 	pip install -r requirements.txt
 
 lint:
-	flake8 --exit-zero mod_genshi
+	flake8 --exit-zero mod_genshi tests
 
 dist:
 	python setup.py sdist
