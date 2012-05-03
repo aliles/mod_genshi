@@ -48,11 +48,16 @@ and NOT ready for production use.
 A shortened list of features
 that are still to be completed.
 
-* Load configuration from config file.
-* Extend Python path for templates from configuration.
-* Allow multiple application instances to co-exist.
 * Use `WebOb <http://www.webob.org/>`_ to support static file handling.
+  (`#1 <https://github.com/aliles/mod_genshi/issues/1>`_)
 * Improve the security controls around template loading.
+  (`#2 <https://github.com/aliles/mod_genshi/issues/2>`_)
+* Load configuration from config file.
+  (`#3 <https://github.com/aliles/mod_genshi/issues/3>`_)
+* Extend Python path for templates from configuration.
+  (`#4 <https://github.com/aliles/mod_genshi/issues/4>`_)
+* Allow multiple application instances to co-exist.
+  (`#5 <https://github.com/aliles/mod_genshi/issues/5>`_)
 
 Not to mention all the documentation that is required.
 
