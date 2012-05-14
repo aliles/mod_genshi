@@ -15,10 +15,13 @@ site:
 	cd docs; make html
 
 test:
-	python setup.py test
+	coverage run setup.py test
 
 unittest:
-	unit2 discover
+	coverage run -m unittest2 discover
+
+coverage:
+	coverage report --include="mod_genshi*"
 
 clean:
 	find . -type f -name "*.pyc" -exec rm '{}' +
