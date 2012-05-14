@@ -21,6 +21,10 @@ class TestTemplatePath(unittest2.TestCase):
         exc = mod_genshi.wsgi.HTTPForbidden
         self.assertRaises(exc, self.get_path, '/../etc/password')
 
+    def test_symbolic_link(self):
+        exc = mod_genshi.wsgi.HTTPForbidden
+        self.assertRaises(exc, self.get_path, 'tests/templates/passwd')
+
     def test_empty_path(self):
         self.assertEqual(self.get_path(''), 'index.html')
 

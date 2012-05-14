@@ -15,24 +15,21 @@ class WSGI(object):
     """mod_genshi WSGI application."""
 
     def __init__(self):
-        self.loader = TemplateLoader(os.path.abspath(os.curdir),
-            auto_reload=True)
-        self.index = 'index.html'
-        self.blocked_patterns = ('..',)
-        self.blocked_prefixes = ('.',)
         self.blocked_suffixes = ('.swp', '.bak', '~')
+        self.index = 'index.html'
+        self.templatedir = os.path.abspath(os.curdir)
+        self.loader = TemplateLoader(self.templatedir, auto_reload=True)
 
-    def _is_path_blocked(self, path):
+    def _is_path_blocked(self, relpath):
         "Raise HTTPForbidden if path is blocked"
-        head, tail = os.path.split(path)
-        for pattern in self.blocked_patterns:
-            if pattern in path:
-                raise HTTPForbidden()
-        if tail.startswith(self.blocked_prefixes):
+        if relpath.endswith(self.blocked_suffixes):
             raise HTTPForbidden()
-        if tail.endswith(self.blocked_suffixes):
+        abspath = os.path.join(self.templatedir, relpath)
+        realpath = os.path.realpath(abspath)
+        prefix = os.path.commonprefix((realpath, self.templatedir))
+        if prefix != self.templatedir:
             raise HTTPForbidden()
-        return path
+        return relpath
 
     def _get_template_path(self, url):
         "Translate request path to template path"
