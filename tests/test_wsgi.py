@@ -107,6 +107,12 @@ class TestHeaders(unittest2.TestCase):
         self.assertIsNone(self.response.content_encoding)
         self.assertEqual(self.response.status_code, 200)
 
+    def test_gz(self):
+        self.headers('file.txt.gz', self.response)
+        self.assertEqual(self.response.content_type, 'text/plain')
+        self.assertEqual(self.response.content_encoding, 'gzip')
+        self.assertEqual(self.response.status_code, 200)
+
 
 class TestBody(unittest2.TestCase):
 

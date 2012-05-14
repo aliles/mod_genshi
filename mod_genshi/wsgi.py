@@ -16,6 +16,7 @@ class WSGI(object):
 
     def __init__(self):
         self.blocked_suffixes = ('.swp', '.bak', '~')
+        self.default_content_type = 'text/plain'
         self.index = 'index.html'
         self.templatedir = os.path.abspath(os.curdir)
         self.loader = TemplateLoader(self.templatedir, auto_reload=True)
@@ -49,7 +50,7 @@ class WSGI(object):
         if encoding is not None:
             response.content_encoding = encoding
         if content_type is None:
-            content_type = 'text/plain'
+            content_type = self.default_content_type
         response.content_type = content_type
         response.status_code = 200
 
