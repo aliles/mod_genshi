@@ -21,7 +21,7 @@ unittest:
 	coverage run -m unittest2 discover
 
 coverage:
-	coverage report --include="mod_genshi*"
+	coverage report --show-missing --include="mod_genshi*"
 
 clean:
 	find . -type f -name "*.pyc" -exec rm '{}' +
