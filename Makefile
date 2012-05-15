@@ -23,6 +23,9 @@ unittest:
 coverage:
 	coverage report --show-missing --include="mod_genshi*"
 
+server:
+	python -m mod_genshi.server -b
+
 clean:
 	find . -type f -name "*.pyc" -exec rm '{}' +
 	find . -type d -name "__pycache__" -exec rmdir '{}' +
