@@ -4,10 +4,12 @@ import mimetypes
 import os
 import re
 
-from genshi.template import TemplateLoader, TemplateNotFound
+from genshi.template import TemplateLoader, TemplateNotFound, TemplateError
 from genshi.template import MarkupTemplate, NewTextTemplate
 from webob import Request, Response
-from webob.exc import HTTPNotFound, HTTPForbidden, HTTPError
+from webob.exc import HTTPNotFound, HTTPForbidden, HTTPError, HTTPServerError
+
+from mod_genshi.static import DirectoryApp
 
 __all__ = ['WSGI']
 
@@ -18,23 +20,32 @@ class WSGI(object):
     def __init__(self):
         self.default_content_type = 'text/plain'
         self.index = 'index.html'
-        self.templatedir = os.path.abspath(os.curdir)
+        # routing
         self.suffix_blocked = ('.swp', '.bak', '~')
         self.suffix_markup = ('.htm', '.html', '.xhtml', '.xml')
+        self.suffix_static = ('.ico', '.gif', '.jpeg', '.jpg', '.png', '.svg')
         self.suffix_text = ('.json', '.text', '.txt')
-        self.text_suffixes = ('.txt', '.json')
+        # template loading
+        self.templatedir = os.path.abspath(os.curdir)
         self.loader = TemplateLoader(self.templatedir, auto_reload=True)
+        # static files
+        self.staticdir = os.path.abspath(os.curdir)
+        self.static = DirectoryApp(self.templatedir)
 
     def _is_path_blocked(self, relpath):
         "Raise HTTPForbidden if path is blocked"
         if relpath.endswith(self.suffix_blocked):
-            raise HTTPForbidden()
+            raise HTTPForbidden(comment=relpath)
         abspath = os.path.join(self.templatedir, relpath)
         realpath = os.path.realpath(abspath)
         prefix = os.path.commonprefix((realpath, self.templatedir))
         if prefix != self.templatedir:
-            raise HTTPForbidden()
+            raise HTTPForbidden(comment=relpath)
         return relpath
+
+    def _is_static_path(self, path):
+        if not path.endswith(self.suffix_static):
+            raise HTTPNotFound(comment=path)
 
     def _get_template_path(self, url):
         "Translate request path to template path"
@@ -52,7 +63,7 @@ class WSGI(object):
             return MarkupTemplate
         elif path.endswith(self.suffix_text):
             return NewTextTemplate
-        raise HTTPNotFound
+        return None
 
     def _headers(self, template, response):
         "Populate '200 OK' HTTP response, guessing the content type"
@@ -76,11 +87,17 @@ class WSGI(object):
         response = Response()
         try:
             template = self._get_template_path(request.path)
-            style = self._get_template_style()
-            self._headers(template, response)
-            self._body(template, style, request, response)
+            style = self._get_template_style(request.path)
+            if style:
+                self._headers(template, response)
+                self._body(template, style, request, response)
+            else:
+                self._is_static_path(template)
+                response = request.get_response(self.static)
         except TemplateNotFound:
-            response = HTTPNotFound()
+            response = HTTPNotFound(comment=request.path)
+        except TemplateError:
+            response = HTTPServerError(comment=request.path)
         except HTTPError as err:
             response = err
         return response(environ, start_response)

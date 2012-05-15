@@ -81,8 +81,7 @@ class TestStyle(ModGenshiApp, unittest2.TestCase):
         self.assertIs(self.get_style('file.txt'), self.Text)
 
     def test_unknown(self):
-        exc = mod_genshi.wsgi.HTTPNotFound
-        self.assertRaises(exc, self.get_style, 'file.xxx')
+        self.assertIs(self.get_style('file.xxx'), None)
 
 
 class TestSecurity(ModGenshiApp, unittest2.TestCase):
