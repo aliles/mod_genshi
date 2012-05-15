@@ -3,19 +3,32 @@ import unittest2
 import mod_genshi.wsgi
 
 
-class TestTemplatePath(unittest2.TestCase):
+class ModGenshiApp(object):
+
+    Markup = mod_genshi.wsgi.MarkupTemplate
+    Text = mod_genshi.wsgi.NewTextTemplate
+    HTTPForbidden = mod_genshi.wsgi.HTTPForbidden
 
     @classmethod
     def setUpClass(cls):
-        cls.app = mod_genshi.wsgi.WSGI()
+        cls.App = mod_genshi.wsgi.WSGI()
+        cls.body = cls.App._body
+        cls.get_path = cls.App._get_template_path
+        cls.get_style = cls.App._get_template_style
+        cls.is_blocked = cls.App._is_path_blocked
+        cls.set_headers = cls.App._headers
 
     @classmethod
     def tearDownClass(cls):
-        if hasattr(cls, 'app'):
-            del cls.app
+        if hasattr(cls, 'App'):
+            del cls.App
 
     def setUp(self):
-        self.get_path = self.app._get_template_path
+        self.request = mod_genshi.wsgi.Request({})
+        self.response = mod_genshi.wsgi.Response()
+
+
+class TestTemplatePath(ModGenshiApp, unittest2.TestCase):
 
     def test_parent_path(self):
         exc = mod_genshi.wsgi.HTTPForbidden
@@ -44,20 +57,7 @@ class TestTemplatePath(unittest2.TestCase):
         self.assertEqual(self.get_path('a/'), 'a/index.html')
 
 
-class TestStyle(unittest2.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.app = mod_genshi.wsgi.WSGI()
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.app
-
-    def setUp(self):
-        self.get_style = self.app._get_template_style
-        self.Markup = mod_genshi.wsgi.MarkupTemplate
-        self.Text = mod_genshi.wsgi.NewTextTemplate
+class TestStyle(ModGenshiApp, unittest2.TestCase):
 
     def test_htm(self):
         self.assertIs(self.get_style('file.htm'), self.Markup)
@@ -85,106 +85,66 @@ class TestStyle(unittest2.TestCase):
         self.assertRaises(exc, self.get_style, 'file.xxx')
 
 
-class TestSecurity(unittest2.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.app = mod_genshi.wsgi.WSGI()
-
-    @classmethod
-    def tearDownClass(cls):
-        if hasattr(cls, 'app'):
-            del cls.app
-
-    def setUp(self):
-        self.is_blocked = self.app._is_path_blocked
-        self.exception = mod_genshi.wsgi.HTTPForbidden
+class TestSecurity(ModGenshiApp, unittest2.TestCase):
 
     def test_parent_path(self):
-        self.assertRaises(self.exception, self.is_blocked, '/../etc/password')
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, '/../etc/password')
 
     def test_hidden_file(self):
-        self.assertRaises(self.exception, self.is_blocked, '/.password.txt')
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, '/.password.txt')
 
     def test_vim_swap_file(self):
-        self.assertRaises(self.exception, self.is_blocked, '/index.html.swp')
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, '/index.html.swp')
 
     def test_vim_backup_file(self):
-        self.assertRaises(self.exception, self.is_blocked, '/index.html~')
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, '/index.html~')
 
     def test_backup_file(self):
-        self.assertRaises(self.exception, self.is_blocked, '/index.html.bak')
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, '/index.html.bak')
 
 
-class TestHeaders(unittest2.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.app = mod_genshi.wsgi.WSGI()
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.app
-
-    def setUp(self):
-        self.response = mod_genshi.wsgi.Response()
-        self.headers = self.app._headers
+class TestHeaders(ModGenshiApp, unittest2.TestCase):
 
     def test_default(self):
-        self.headers('', self.response)
+        self.set_headers('', self.response)
         self.assertEqual(self.response.content_type, 'text/plain')
         self.assertIsNone(self.response.content_encoding)
         self.assertEqual(self.response.status_code, 200)
 
     def test_html(self):
-        self.headers('index.html', self.response)
+        self.set_headers('index.html', self.response)
         self.assertEqual(self.response.content_type, 'text/html')
         self.assertIsNone(self.response.content_encoding)
         self.assertEqual(self.response.status_code, 200)
 
     def test_txt(self):
-        self.headers('index.txt', self.response)
+        self.set_headers('index.txt', self.response)
         self.assertEqual(self.response.content_type, 'text/plain')
         self.assertIsNone(self.response.content_encoding)
         self.assertEqual(self.response.status_code, 200)
 
     def test_gz(self):
-        self.headers('file.txt.gz', self.response)
+        self.set_headers('file.txt.gz', self.response)
         self.assertEqual(self.response.content_type, 'text/plain')
         self.assertEqual(self.response.content_encoding, 'gzip')
         self.assertEqual(self.response.status_code, 200)
 
 
-class TestBody(unittest2.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.app = mod_genshi.wsgi.WSGI()
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.app
-
-    def setUp(self):
-        self.req = mod_genshi.wsgi.Request({})
-        self.resp = mod_genshi.wsgi.Response()
-        self.body = self.app._body
-        self.Markup = mod_genshi.wsgi.MarkupTemplate
-        self.Text = mod_genshi.wsgi.NewTextTemplate
+class TestBody(ModGenshiApp, unittest2.TestCase):
 
     def test_hello_world_txt(self):
         path = 'tests/templates/hello_world.txt'
         content = open(path, 'rt').read()
-        self.body('tests/templates/hello_world.txt', self.Text, self.req, self.resp)
-        self.assertEqual(self.resp.body, content)
+        self.body('tests/templates/hello_world.txt', self.Text, self.request, self.response)
+        self.assertEqual(self.response.body, content)
 
     def test_hello_world_html(self):
         path = 'tests/templates/hello_world.html'
         content = open(path, 'rt').read()
-        self.body('tests/templates/hello_world.html', self.Markup, self.req, self.resp)
-        self.assertEqual(self.resp.body, content)
+        self.body('tests/templates/hello_world.html', self.Markup, self.request, self.response)
+        self.assertEqual(self.response.body, content)
 
     def test_not_found(self):
         path = 'tests/templates/__not_found__.html'
         exc = mod_genshi.wsgi.TemplateNotFound
-        self.assertRaises(exc, self.body, path, self.Markup, self.req, self.resp)
+        self.assertRaises(exc, self.body, path, self.Markup, self.request, self.response)
