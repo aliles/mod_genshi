@@ -155,3 +155,9 @@ class TestBody(ModGenshiApp, unittest2.TestCase):
         exc = mod_genshi.wsgi.TemplateNotFound
         self.assertRaises(exc, self.body, path,
                           self.Markup, self.request, self.response)
+
+    def test_syntax_error(self):
+        path = 'tests/templates/invalid.html'
+        exc = mod_genshi.wsgi.TemplateError
+        self.assertRaises(exc, self.body, path,
+                          self.Markup, self.request, self.response)
