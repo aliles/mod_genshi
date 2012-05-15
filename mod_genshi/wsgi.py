@@ -5,6 +5,7 @@ import os
 import re
 
 from genshi.template import TemplateLoader, TemplateNotFound
+from genshi.template import MarkupTemplate, NewTextTemplate
 from webob import Request, Response
 from webob.exc import HTTPNotFound, HTTPForbidden, HTTPError
 
@@ -15,15 +16,18 @@ class WSGI(object):
     """mod_genshi WSGI application."""
 
     def __init__(self):
-        self.blocked_suffixes = ('.swp', '.bak', '~')
         self.default_content_type = 'text/plain'
         self.index = 'index.html'
         self.templatedir = os.path.abspath(os.curdir)
+        self.suffix_blocked = ('.swp', '.bak', '~')
+        self.suffix_markup = ('.htm', '.html', '.xhtml', '.xml')
+        self.suffix_text = ('.json', '.text', '.txt')
+        self.text_suffixes = ('.txt', '.json')
         self.loader = TemplateLoader(self.templatedir, auto_reload=True)
 
     def _is_path_blocked(self, relpath):
         "Raise HTTPForbidden if path is blocked"
-        if relpath.endswith(self.blocked_suffixes):
+        if relpath.endswith(self.suffix_blocked):
             raise HTTPForbidden()
         abspath = os.path.join(self.templatedir, relpath)
         realpath = os.path.realpath(abspath)
@@ -34,8 +38,6 @@ class WSGI(object):
 
     def _get_template_path(self, url):
         "Translate request path to template path"
-        if '..' in url:
-            raise HTTPForbidden()
         path = re.sub(r'/{2,}', r'/', url)
         if path.startswith('/'):
             path = path[1:]
@@ -43,6 +45,14 @@ class WSGI(object):
             path += self.index
         self._is_path_blocked(path)
         return path
+
+    def _get_template_style(self, path):
+        "Return class for template type"
+        if path.endswith(self.suffix_markup):
+            return MarkupTemplate
+        elif path.endswith(self.suffix_text):
+            return NewTextTemplate
+        raise HTTPNotFound
 
     def _headers(self, template, response):
         "Populate '200 OK' HTTP response, guessing the content type"
@@ -54,9 +64,9 @@ class WSGI(object):
         response.content_type = content_type
         response.status_code = 200
 
-    def _body(self, path, request, response):
+    def _body(self, path, style, request, response):
         "Generate response body from Genshi template"
-        template = self.loader.load(path)
+        template = self.loader.load(path, cls=style)
         stream = template.generate(REQUEST=request, RESPONSE=response)
         response.body = stream.render()
 
@@ -66,8 +76,9 @@ class WSGI(object):
         response = Response()
         try:
             template = self._get_template_path(request.path)
+            style = self._get_template_style()
             self._headers(template, response)
-            self._body(template, request, response)
+            self._body(template, style, request, response)
         except TemplateNotFound:
             response = HTTPNotFound()
         except HTTPError as err:

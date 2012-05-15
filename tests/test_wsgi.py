@@ -44,6 +44,47 @@ class TestTemplatePath(unittest2.TestCase):
         self.assertEqual(self.get_path('a/'), 'a/index.html')
 
 
+class TestStyle(unittest2.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = mod_genshi.wsgi.WSGI()
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.app
+
+    def setUp(self):
+        self.get_style = self.app._get_template_style
+        self.Markup = mod_genshi.wsgi.MarkupTemplate
+        self.Text = mod_genshi.wsgi.NewTextTemplate
+
+    def test_htm(self):
+        self.assertIs(self.get_style('file.htm'), self.Markup)
+
+    def test_html(self):
+        self.assertIs(self.get_style('file.html'), self.Markup)
+
+    def test_xhtml(self):
+        self.assertIs(self.get_style('file.xhtml'), self.Markup)
+
+    def test_xml(self):
+        self.assertIs(self.get_style('file.xml'), self.Markup)
+
+    def test_json(self):
+        self.assertIs(self.get_style('file.json'), self.Text)
+
+    def test_text(self):
+        self.assertIs(self.get_style('file.text'), self.Text)
+
+    def test_txt(self):
+        self.assertIs(self.get_style('file.txt'), self.Text)
+
+    def test_unknown(self):
+        exc = mod_genshi.wsgi.HTTPNotFound
+        self.assertRaises(exc, self.get_style, 'file.xxx')
+
+
 class TestSecurity(unittest2.TestCase):
 
     @classmethod
@@ -128,21 +169,22 @@ class TestBody(unittest2.TestCase):
         self.req = mod_genshi.wsgi.Request({})
         self.resp = mod_genshi.wsgi.Response()
         self.body = self.app._body
+        self.Markup = mod_genshi.wsgi.MarkupTemplate
+        self.Text = mod_genshi.wsgi.NewTextTemplate
 
-    @unittest2.skip('Plain text templates not supported')
     def test_hello_world_txt(self):
         path = 'tests/templates/hello_world.txt'
         content = open(path, 'rt').read()
-        self.body('tests/templates/hello_world.txt', self.req, self.resp)
+        self.body('tests/templates/hello_world.txt', self.Text, self.req, self.resp)
         self.assertEqual(self.resp.body, content)
 
     def test_hello_world_html(self):
         path = 'tests/templates/hello_world.html'
         content = open(path, 'rt').read()
-        self.body('tests/templates/hello_world.html', self.req, self.resp)
+        self.body('tests/templates/hello_world.html', self.Markup, self.req, self.resp)
         self.assertEqual(self.resp.body, content)
 
     def test_not_found(self):
         path = 'tests/templates/__not_found__.html'
         exc = mod_genshi.wsgi.TemplateNotFound
-        self.assertRaises(exc, self.body, path, self.req, self.resp)
+        self.assertRaises(exc, self.body, path, self.Markup, self.req, self.resp)
