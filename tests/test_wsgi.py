@@ -88,19 +88,24 @@ class TestStyle(ModGenshiApp, unittest2.TestCase):
 class TestSecurity(ModGenshiApp, unittest2.TestCase):
 
     def test_parent_path(self):
-        self.assertRaises(self.HTTPForbidden, self.is_blocked, '/../etc/password')
+        path = '/../etc/password'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, path)
 
     def test_hidden_file(self):
-        self.assertRaises(self.HTTPForbidden, self.is_blocked, '/.password.txt')
+        path = '/.password.txt'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, path)
 
     def test_vim_swap_file(self):
-        self.assertRaises(self.HTTPForbidden, self.is_blocked, '/index.html.swp')
+        path = '/index.html.swp'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, path)
 
     def test_vim_backup_file(self):
-        self.assertRaises(self.HTTPForbidden, self.is_blocked, '/index.html~')
+        path = '/index.html~'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, path)
 
     def test_backup_file(self):
-        self.assertRaises(self.HTTPForbidden, self.is_blocked, '/index.html.bak')
+        path = '/index.html.bak'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, path)
 
 
 class TestHeaders(ModGenshiApp, unittest2.TestCase):
@@ -135,16 +140,19 @@ class TestBody(ModGenshiApp, unittest2.TestCase):
     def test_hello_world_txt(self):
         path = 'tests/templates/hello_world.txt'
         content = open(path, 'rt').read()
-        self.body('tests/templates/hello_world.txt', self.Text, self.request, self.response)
+        self.body('tests/templates/hello_world.txt',
+                  self.Text, self.request, self.response)
         self.assertEqual(self.response.body, content)
 
     def test_hello_world_html(self):
         path = 'tests/templates/hello_world.html'
         content = open(path, 'rt').read()
-        self.body('tests/templates/hello_world.html', self.Markup, self.request, self.response)
+        self.body('tests/templates/hello_world.html',
+                  self.Markup, self.request, self.response)
         self.assertEqual(self.response.body, content)
 
     def test_not_found(self):
         path = 'tests/templates/__not_found__.html'
         exc = mod_genshi.wsgi.TemplateNotFound
-        self.assertRaises(exc, self.body, path, self.Markup, self.request, self.response)
+        self.assertRaises(exc, self.body, path,
+                          self.Markup, self.request, self.response)
