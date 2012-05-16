@@ -13,7 +13,7 @@ class ModGenshiApp(object):
     def setUpClass(cls):
         cls.App = mod_genshi.wsgi.WSGI()
         cls.body = cls.App._body
-        cls.cwd = cls.App.templatedir
+        cls.cwd = cls.App.config.templatedir
         cls.get_path = cls.App._get_basic_path
         cls.get_style = cls.App._get_template_style
         cls.is_blocked = cls.App._is_path_blocked

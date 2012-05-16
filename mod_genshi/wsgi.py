@@ -10,6 +10,8 @@ from webob import Request, Response
 from webob.exc import HTTPNotFound, HTTPForbidden, HTTPError, HTTPServerError
 from webob.static import DirectoryApp
 
+from mod_genshi import configuration
+
 __all__ = ['WSGI']
 
 
@@ -17,40 +19,31 @@ class WSGI(object):
     """mod_genshi WSGI application."""
 
     def __init__(self):
-        self.default_content_type = 'text/plain'
-        self.index = 'index.html'
-        # routing
-        self.suffix_blocked = ('.swp', '.bak', '~')
-        self.suffix_markup = ('.htm', '.html', '.xhtml', '.xml')
-        self.suffix_static = ('.ico', '.gif', '.jpeg', '.jpg', '.png', '.svg')
-        self.suffix_text = ('.json', '.text', '.txt')
-        # template loading
-        self.templatedir = os.path.abspath(os.curdir)
-        self.loader = TemplateLoader(self.templatedir, auto_reload=True)
-        # static files
-        self.staticdir = os.path.abspath(os.curdir)
-        self.static = DirectoryApp(self.templatedir)
+        self.config = configuration.Config()
+        self.static = DirectoryApp(self.config.staticdir)
+        self.loader = TemplateLoader(self.config.templatedir,
+                                     auto_reload=True)
 
     def _is_path_blocked(self, basepath, relpath):
         "Raise HTTPForbidden if path is blocked"
-        if relpath.endswith(self.suffix_blocked):
+        if relpath.endswith(self.config.suffix_blocked):
             raise HTTPForbidden(comment=relpath)
         _, filename = os.path.split(relpath)
         if filename.startswith('.'):
             raise HTTPForbidden(comment=relpath)
-        abspath = os.path.join(self.templatedir, relpath)
+        abspath = os.path.join(basepath, relpath)
         realpath = os.path.realpath(abspath)
         prefix = os.path.commonprefix((realpath, basepath))
         if prefix != basepath:
             raise HTTPForbidden(comment=relpath)
 
     def _is_static_path_blocked(self, path):
-        self._is_path_blocked(self.staticdir, path)
-        if not path.endswith(self.suffix_static):
+        self._is_path_blocked(self.config.staticdir, path)
+        if not path.endswith(self.config.suffix_static):
             raise HTTPForbidden(comment=path)
 
     def _is_template_path_blocked(self, path):
-        self._is_path_blocked(self.templatedir, path)
+        self._is_path_blocked(self.config.templatedir, path)
 
     def _get_basic_path(self, url):
         "Translate request path to template path"
@@ -58,14 +51,14 @@ class WSGI(object):
         if path.startswith('/'):
             path = path[1:]
         if path.endswith('/') or path == '':
-            path += self.index
+            path += self.config.index
         return path
 
     def _get_template_style(self, path):
         "Return class for template type"
-        if path.endswith(self.suffix_markup):
+        if path.endswith(self.config.suffix_markup):
             return MarkupTemplate
-        elif path.endswith(self.suffix_text):
+        elif path.endswith(self.config.suffix_text):
             return NewTextTemplate
         return None
 
@@ -75,7 +68,7 @@ class WSGI(object):
         if encoding is not None:
             response.content_encoding = encoding
         if content_type is None:
-            content_type = self.default_content_type
+            content_type = self.config.default_content_type
         response.content_type = content_type
         response.status_code = 200
 
