@@ -81,7 +81,7 @@ class TestStyle(ModGenshiApp, unittest2.TestCase):
 class TestSecurity(ModGenshiApp, unittest2.TestCase):
 
     def test_index(self):
-        path ='index.html'
+        path = 'index.html'
         self.assertFalse(self.is_blocked(self.cwd, path))
 
     def test_parent_path(self):
