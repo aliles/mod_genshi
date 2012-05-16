@@ -8,8 +8,7 @@ from genshi.template import TemplateLoader, TemplateNotFound, TemplateError
 from genshi.template import MarkupTemplate, NewTextTemplate
 from webob import Request, Response
 from webob.exc import HTTPNotFound, HTTPForbidden, HTTPError, HTTPServerError
-
-from mod_genshi.static import DirectoryApp
+from webob.static import DirectoryApp
 
 __all__ = ['WSGI']
 
