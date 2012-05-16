@@ -13,6 +13,7 @@ class ModGenshiApp(object):
     def setUpClass(cls):
         cls.App = mod_genshi.wsgi.WSGI()
         cls.body = cls.App._body
+        cls.cwd = cls.App.templatedir
         cls.get_path = cls.App._get_template_path
         cls.get_style = cls.App._get_template_style
         cls.is_blocked = cls.App._is_path_blocked
@@ -86,25 +87,29 @@ class TestStyle(ModGenshiApp, unittest2.TestCase):
 
 class TestSecurity(ModGenshiApp, unittest2.TestCase):
 
+    def test_index(self):
+        path ='index.html'
+        self.assertEqual(self.is_blocked(self.cwd, path), path)
+
     def test_parent_path(self):
-        path = '/../etc/password'
-        self.assertRaises(self.HTTPForbidden, self.is_blocked, path)
+        path = '../etc/password'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, self.cwd, path)
 
     def test_hidden_file(self):
-        path = '/.password.txt'
-        self.assertRaises(self.HTTPForbidden, self.is_blocked, path)
+        path = '.password.txt'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, self.cwd, path)
 
     def test_vim_swap_file(self):
-        path = '/index.html.swp'
-        self.assertRaises(self.HTTPForbidden, self.is_blocked, path)
+        path = 'index.html.swp'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, self.cwd, path)
 
     def test_vim_backup_file(self):
-        path = '/index.html~'
-        self.assertRaises(self.HTTPForbidden, self.is_blocked, path)
+        path = 'index.html~'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, self.cwd, path)
 
     def test_backup_file(self):
-        path = '/index.html.bak'
-        self.assertRaises(self.HTTPForbidden, self.is_blocked, path)
+        path = 'index.html.bak'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, self.cwd, path)
 
 
 class TestHeaders(ModGenshiApp, unittest2.TestCase):

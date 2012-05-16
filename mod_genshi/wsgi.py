@@ -35,6 +35,9 @@ class WSGI(object):
         "Raise HTTPForbidden if path is blocked"
         if relpath.endswith(self.suffix_blocked):
             raise HTTPForbidden(comment=relpath)
+        _, filename = os.path.split(relpath)
+        if filename.startswith('.'):
+            raise HTTPForbidden(comment=relpath)
         abspath = os.path.join(self.templatedir, relpath)
         realpath = os.path.realpath(abspath)
         prefix = os.path.commonprefix((realpath, self.templatedir))
