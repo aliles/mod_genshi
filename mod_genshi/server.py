@@ -45,8 +45,8 @@ def open_browser_cmd(opts):
     return None
 
 
-if __name__ == '__main__':
-    opts = parse_command_line()
+def run(cmdline=None):
+    opts = parse_command_line(cmdline)
     command = open_browser_cmd(opts)
     if command is not None and os.fork() == 0:
         time.sleep(0.5)
@@ -58,3 +58,7 @@ if __name__ == '__main__':
         httpd.serve_forever()
     except (KeyboardInterrupt, SystemExit):
         pass
+
+
+if __name__ == '__main__':
+    run()
