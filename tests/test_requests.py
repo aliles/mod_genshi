@@ -55,7 +55,7 @@ class TestRequests(unittest2.TestCase):
         path = 'tests/templates/_does_not_exist_'
         request = Request.blank(path)
         response = request.get_response(self.App)
-        self.assertEqual(response.status_int, 404)
+        self.assertEqual(response.status_int, 403)
 
     def test_not_found_template(self):
         path = 'tests/templates/_does_not_exist_.html'

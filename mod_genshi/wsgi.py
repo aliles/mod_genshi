@@ -31,7 +31,7 @@ class WSGI(object):
         self.staticdir = os.path.abspath(os.curdir)
         self.static = DirectoryApp(self.templatedir)
 
-    def _is_path_blocked(self, relpath):
+    def _is_path_blocked(self, basepath, relpath):
         "Raise HTTPForbidden if path is blocked"
         if relpath.endswith(self.suffix_blocked):
             raise HTTPForbidden(comment=relpath)
@@ -40,23 +40,25 @@ class WSGI(object):
             raise HTTPForbidden(comment=relpath)
         abspath = os.path.join(self.templatedir, relpath)
         realpath = os.path.realpath(abspath)
-        prefix = os.path.commonprefix((realpath, self.templatedir))
-        if prefix != self.templatedir:
+        prefix = os.path.commonprefix((realpath, basepath))
+        if prefix != basepath:
             raise HTTPForbidden(comment=relpath)
-        return relpath
 
-    def _is_static_path(self, path):
+    def _is_static_path_blocked(self, path):
+        self._is_path_blocked(self.staticdir, path)
         if not path.endswith(self.suffix_static):
-            raise HTTPNotFound(comment=path)
+            raise HTTPForbidden(comment=path)
 
-    def _get_template_path(self, url):
+    def _is_template_path_blocked(self, path):
+        self._is_path_blocked(self.templatedir, path)
+
+    def _get_basic_path(self, url):
         "Translate request path to template path"
         path = re.sub(r'/{2,}', r'/', url)
         if path.startswith('/'):
             path = path[1:]
         if path.endswith('/') or path == '':
             path += self.index
-        self._is_path_blocked(path)
         return path
 
     def _get_template_style(self, path):
@@ -88,13 +90,14 @@ class WSGI(object):
         request = Request(environ)
         response = Response()
         try:
-            template = self._get_template_path(request.path)
+            path = self._get_basic_path(request.path)
             style = self._get_template_style(request.path)
             if style:
-                self._headers(template, response)
-                self._body(template, style, request, response)
+                self._is_template_path_blocked(path)
+                self._headers(path, response)
+                self._body(path, style, request, response)
             else:
-                self._is_static_path(template)
+                self._is_static_path_blocked(path)
                 response = request.get_response(self.static)
         except TemplateNotFound:
             response = HTTPNotFound(comment=request.path)

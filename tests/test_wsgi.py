@@ -14,9 +14,10 @@ class ModGenshiApp(object):
         cls.App = mod_genshi.wsgi.WSGI()
         cls.body = cls.App._body
         cls.cwd = cls.App.templatedir
-        cls.get_path = cls.App._get_template_path
+        cls.get_path = cls.App._get_basic_path
         cls.get_style = cls.App._get_template_style
         cls.is_blocked = cls.App._is_path_blocked
+        cls.is_static = cls.App._is_static_path_blocked
         cls.set_headers = cls.App._headers
 
     @classmethod
@@ -30,14 +31,6 @@ class ModGenshiApp(object):
 
 
 class TestTemplatePath(ModGenshiApp, unittest2.TestCase):
-
-    def test_parent_path(self):
-        exc = mod_genshi.wsgi.HTTPForbidden
-        self.assertRaises(exc, self.get_path, '/../etc/password')
-
-    def test_symbolic_link(self):
-        exc = mod_genshi.wsgi.HTTPForbidden
-        self.assertRaises(exc, self.get_path, 'tests/templates/passwd')
 
     def test_empty_path(self):
         self.assertEqual(self.get_path(''), 'index.html')
@@ -89,7 +82,7 @@ class TestSecurity(ModGenshiApp, unittest2.TestCase):
 
     def test_index(self):
         path ='index.html'
-        self.assertEqual(self.is_blocked(self.cwd, path), path)
+        self.assertFalse(self.is_blocked(self.cwd, path))
 
     def test_parent_path(self):
         path = '../etc/password'
@@ -110,6 +103,14 @@ class TestSecurity(ModGenshiApp, unittest2.TestCase):
     def test_backup_file(self):
         path = 'index.html.bak'
         self.assertRaises(self.HTTPForbidden, self.is_blocked, self.cwd, path)
+
+    def test_symbolic_link(self):
+        path = 'tests/templates/passwd'
+        self.assertRaises(self.HTTPForbidden, self.is_blocked, self.cwd, path)
+
+    def test_static_file(self):
+        path = 'file.mov'
+        self.assertRaises(self.HTTPForbidden, self.is_static, path)
 
 
 class TestHeaders(ModGenshiApp, unittest2.TestCase):
