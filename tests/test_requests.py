@@ -1,3 +1,6 @@
+import os
+import sys
+
 import unittest2
 
 from webob import Request
@@ -8,7 +11,7 @@ class TestRequests(unittest2.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.App = mod_genshi.wsgi.WSGI()
+        cls.App = mod_genshi.wsgi.WSGI('tests/app')
 
     @classmethod
     def tearDownClass(cls):
@@ -16,8 +19,8 @@ class TestRequests(unittest2.TestCase):
             del cls.App
 
     def test_hello_world_html(self):
-        path = 'tests/templates/hello_world.html'
-        with open(path, 'rt') as template:
+        path = 'templates/hello_world.html'
+        with open(os.path.join(self.App.config.base, path), 'rt') as template:
             content = template.read()
         request = Request.blank(path)
         response = request.get_response(self.App)
@@ -26,8 +29,8 @@ class TestRequests(unittest2.TestCase):
         self.assertEqual(response.body, content)
 
     def test_hello_world_text(self):
-        path = 'tests/templates/hello_world.txt'
-        with open(path, 'rt') as template:
+        path = 'templates/hello_world.txt'
+        with open(os.path.join(self.App.config.base, path), 'rt') as template:
             content = template.read()
         request = Request.blank(path)
         response = request.get_response(self.App)
@@ -36,8 +39,8 @@ class TestRequests(unittest2.TestCase):
         self.assertEqual(response.body, content)
 
     def test_static_file(self):
-        path = 'tests/templates/logo.png'
-        with open(path, 'rb') as template:
+        path = 'static/logo.png'
+        with open(os.path.join(self.App.config.base, path), 'rb') as template:
             content = template.read()
         request = Request.blank(path)
         response = request.get_response(self.App)
@@ -46,31 +49,51 @@ class TestRequests(unittest2.TestCase):
         self.assertEqual(response.body, content)
 
     def test_forbidden(self):
-        path = 'tests/templates/passwd'
+        path = 'static/passwd'
         request = Request.blank(path)
         response = request.get_response(self.App)
         self.assertEqual(response.status_int, 403)
 
     def test_not_found_generic(self):
-        path = 'tests/templates/_does_not_exist_'
+        path = 'static/_does_not_exist_'
         request = Request.blank(path)
         response = request.get_response(self.App)
         self.assertEqual(response.status_int, 403)
 
     def test_not_found_template(self):
-        path = 'tests/templates/_does_not_exist_.html'
+        path = 'templates/_does_not_exist_.html'
         request = Request.blank(path)
         response = request.get_response(self.App)
         self.assertEqual(response.status_int, 404)
 
     def test_not_found_static(self):
-        path = 'tests/templates/_does_not_exist_.png'
+        path = 'static/_does_not_exist_.png'
         request = Request.blank(path)
         response = request.get_response(self.App)
         self.assertEqual(response.status_int, 404)
 
     def test_server_error(self):
-        path = 'tests/templates/invalid.html'
+        path = 'templates/invalid.html'
         request = Request.blank(path)
         response = request.get_response(self.App)
         self.assertEqual(response.status_int, 500)
+
+    def test_reload_python(self):
+        def set_counter():
+            import python.counter
+            python.counter.value = 1
+        # paths
+        path = 'templates/counter.txt'
+        code = 'tests/app/python/counter.py'
+        # initialise
+        set_counter()
+        # request one
+        request = Request.blank(path)
+        request.get_response(self.App)
+        self.assertEqual(sys.modules['python.counter'].value, 2)
+        # initiate reload
+        os.utime(code, None)
+        # request two
+        request = Request.blank(path)
+        request.get_response(self.App)
+        self.assertEqual(sys.modules['python.counter'].value, 1)

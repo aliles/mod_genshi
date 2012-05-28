@@ -11,6 +11,7 @@ from webob.exc import HTTPNotFound, HTTPForbidden, HTTPError, HTTPServerError
 from webob.static import DirectoryApp
 
 from mod_genshi import configuration
+from mod_genshi import importer
 
 __all__ = ['WSGI']
 
@@ -18,11 +19,12 @@ __all__ = ['WSGI']
 class WSGI(object):
     """mod_genshi WSGI application."""
 
-    def __init__(self):
-        self.config = configuration.Config()
+    def __init__(self, base=os.curdir):
+        self.config = configuration.Config(base)
         self.static = DirectoryApp(self.config.staticdir)
         self.loader = TemplateLoader(self.config.templatedir,
                                      auto_reload=True)
+        self.importer = importer.register(self.config.pythondir)
 
     def _is_path_blocked(self, basepath, relpath):
         "Raise HTTPForbidden if path is blocked"
@@ -78,6 +80,11 @@ class WSGI(object):
         stream = template.generate(REQUEST=request, RESPONSE=response)
         response.body = stream.render()
 
+    def _reload(self):
+        if self.importer.ismodified:
+            self.importer.clear()
+            self.loader._cache.clear()
+
     def __call__(self, environ, start_response):
         "Serve a HTTP request"
         request = Request(environ)
@@ -87,6 +94,7 @@ class WSGI(object):
             style = self._get_template_style(request.path)
             if style:
                 self._is_template_path_blocked(path)
+                self._reload()
                 self._headers(path, response)
                 self._body(path, style, request, response)
             else:

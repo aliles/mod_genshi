@@ -1,3 +1,6 @@
+import os
+import sys
+
 import unittest2
 
 import mod_genshi.wsgi
@@ -11,7 +14,7 @@ class ModGenshiApp(object):
 
     @classmethod
     def setUpClass(cls):
-        cls.App = mod_genshi.wsgi.WSGI()
+        cls.App = mod_genshi.wsgi.WSGI('tests/app')
         cls.body = cls.App._body
         cls.cwd = cls.App.config.templatedir
         cls.get_path = cls.App._get_basic_path
@@ -105,7 +108,7 @@ class TestSecurity(ModGenshiApp, unittest2.TestCase):
         self.assertRaises(self.HTTPForbidden, self.is_blocked, self.cwd, path)
 
     def test_symbolic_link(self):
-        path = 'tests/templates/passwd'
+        path = 'static/passwd'
         self.assertRaises(self.HTTPForbidden, self.is_blocked, self.cwd, path)
 
     def test_static_file(self):
@@ -143,27 +146,31 @@ class TestHeaders(ModGenshiApp, unittest2.TestCase):
 class TestBody(ModGenshiApp, unittest2.TestCase):
 
     def test_hello_world_txt(self):
-        path = 'tests/templates/hello_world.txt'
-        content = open(path, 'rt').read()
-        self.body('tests/templates/hello_world.txt',
-                  self.Text, self.request, self.response)
+        path = 'templates/hello_world.txt'
+        content = open(os.path.join(self.App.config.base, path), 'rt').read()
+        self.body(path, self.Text, self.request, self.response)
         self.assertEqual(self.response.body, content)
 
     def test_hello_world_html(self):
-        path = 'tests/templates/hello_world.html'
-        content = open(path, 'rt').read()
-        self.body('tests/templates/hello_world.html',
-                  self.Markup, self.request, self.response)
+        path = 'templates/hello_world.html'
+        content = open(os.path.join(self.App.config.base, path), 'rt').read()
+        self.body(path, self.Markup, self.request, self.response)
         self.assertEqual(self.response.body, content)
 
     def test_not_found(self):
-        path = 'tests/templates/__not_found__.html'
+        path = 'templates/__not_found__.html'
         exc = mod_genshi.wsgi.TemplateNotFound
         self.assertRaises(exc, self.body, path,
                           self.Markup, self.request, self.response)
 
     def test_syntax_error(self):
-        path = 'tests/templates/invalid.html'
+        path = 'templates/invalid.html'
         exc = mod_genshi.wsgi.TemplateError
         self.assertRaises(exc, self.body, path,
                           self.Markup, self.request, self.response)
+
+    def test_load_python(self):
+        path = 'templates/counter.txt'
+        self.assertNotIn('python.counter', sys.modules)
+        self.body(path, self.Text, self.request, self.response)
+        self.assertIn('python.counter', sys.modules)
