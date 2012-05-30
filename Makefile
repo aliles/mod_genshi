@@ -27,6 +27,7 @@ server:
 	python -m mod_genshi.server -b
 
 clean:
+	python setup.py clean --all
 	find . -type f -name "*.pyc" -exec rm '{}' +
 	find . -type d -name "__pycache__" -exec rmdir '{}' +
 	rm -rf *.egg-info .coverage
