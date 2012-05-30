@@ -8,7 +8,7 @@ deps:
 lint:
 	flake8 --exit-zero mod_genshi tests
 
-dist:
+sdist:
 	python setup.py sdist
 
 site:
