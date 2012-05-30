@@ -2,6 +2,8 @@
 """
 import os
 
+__all__ = ['Config']
+
 
 class Config(object):
     """Configuration container for mod_genshi WSGI application"""
