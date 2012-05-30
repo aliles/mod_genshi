@@ -1,12 +1,13 @@
 import os
 import sys
 
-import unittest2
-
 import mod_genshi.wsgi
+import mod_genshi.wsgitest
 
 
-class ModGenshiApp(object):
+class ModGenshiApp(mod_genshi.wsgitest.TestWSGI):
+
+    BASE = 'tests/app'
 
     Markup = mod_genshi.wsgi.MarkupTemplate
     Text = mod_genshi.wsgi.NewTextTemplate
@@ -14,26 +15,20 @@ class ModGenshiApp(object):
 
     @classmethod
     def setUpClass(cls):
-        cls.App = mod_genshi.wsgi.WSGI('tests/app')
-        cls.body = cls.App._body
-        cls.cwd = cls.App.config.templatedir
-        cls.get_path = cls.App._get_basic_path
-        cls.get_style = cls.App._get_template_style
-        cls.is_blocked = cls.App._is_path_blocked
-        cls.is_static = cls.App._is_static_path_blocked
-        cls.set_headers = cls.App._headers
-
-    @classmethod
-    def tearDownClass(cls):
-        if hasattr(cls, 'App'):
-            del cls.App
+        cls.body = cls.APPLICATION._body
+        cls.cwd = cls.APPLICATION.config.templatedir
+        cls.get_path = cls.APPLICATION._get_basic_path
+        cls.get_style = cls.APPLICATION._get_template_style
+        cls.is_blocked = cls.APPLICATION._is_path_blocked
+        cls.is_static = cls.APPLICATION._is_static_path_blocked
+        cls.set_headers = cls.APPLICATION._headers
 
     def setUp(self):
         self.request = mod_genshi.wsgi.Request({})
         self.response = mod_genshi.wsgi.Response()
 
 
-class TestTemplatePath(ModGenshiApp, unittest2.TestCase):
+class TestTemplatePath(ModGenshiApp):
 
     def test_empty_path(self):
         self.assertEqual(self.get_path(''), 'index.html')
@@ -54,7 +49,7 @@ class TestTemplatePath(ModGenshiApp, unittest2.TestCase):
         self.assertEqual(self.get_path('a/'), 'a/index.html')
 
 
-class TestStyle(ModGenshiApp, unittest2.TestCase):
+class TestStyle(ModGenshiApp):
 
     def test_htm(self):
         self.assertIs(self.get_style('file.htm'), self.Markup)
@@ -81,7 +76,7 @@ class TestStyle(ModGenshiApp, unittest2.TestCase):
         self.assertIs(self.get_style('file.xxx'), None)
 
 
-class TestSecurity(ModGenshiApp, unittest2.TestCase):
+class TestSecurity(ModGenshiApp):
 
     def test_index(self):
         path = 'index.html'
@@ -116,7 +111,7 @@ class TestSecurity(ModGenshiApp, unittest2.TestCase):
         self.assertRaises(self.HTTPForbidden, self.is_static, path)
 
 
-class TestHeaders(ModGenshiApp, unittest2.TestCase):
+class TestHeaders(ModGenshiApp):
 
     def test_default(self):
         self.set_headers('', self.response)
@@ -143,17 +138,17 @@ class TestHeaders(ModGenshiApp, unittest2.TestCase):
         self.assertEqual(self.response.status_code, 200)
 
 
-class TestBody(ModGenshiApp, unittest2.TestCase):
+class TestBody(ModGenshiApp):
 
     def test_hello_world_txt(self):
         path = 'templates/hello_world.txt'
-        content = open(os.path.join(self.App.config.base, path), 'rt').read()
+        content = open(os.path.join(self.BASE, path), 'rt').read()
         self.body(path, self.Text, self.request, self.response)
         self.assertEqual(self.response.body, content)
 
     def test_hello_world_html(self):
         path = 'templates/hello_world.html'
-        content = open(os.path.join(self.App.config.base, path), 'rt').read()
+        content = open(os.path.join(self.BASE, path), 'rt').read()
         self.body(path, self.Markup, self.request, self.response)
         self.assertEqual(self.response.body, content)
 
